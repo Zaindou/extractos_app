@@ -1,0 +1,103 @@
+body,
+html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+@page {
+    size: letter;
+    margin: 0 !important;
+    height: 400mm;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+header img {
+    height: auto;
+}
+
+#footer-card {
+    display: flex;
+    justify-content: space-between;
+    background-color: #0b253a;
+    color: white;
+    padding: 50px;
+}
+
+#footer-card .container>div {
+    flex: 1;
+}
+
+#footer-card .social-icons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    margin-right: 20px;
+}
+
+#footer-card .social-icons a {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+#footer-card a {
+    text-decoration: none;
+    color: white;
+}
+
+
+
+.icon-color {
+    fill: #0b253a;
+}
+
+.text-primary,
+.border-primary {
+    color: #00263C !important;
+    border-color: #00263C !important;
+    line-height: 110% !important;
+}
+
+.card {
+    border-color: #00263C !important;
+    border-radius: 10px !important;
+}
+
+
+.img-logo {
+    width: 250px;
+}
+
+table {
+    border-collapse: collapse;
+    color: #333;
+    margin: auto;
+}
+
+tr:nth-child(odd) {
+    background: #eee;
+}
+
+tr:first-child {
+    background: white;
+}
+
+td,
+th {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+}
+
+th {
+    border: none;
+    text-align: center;
+}
