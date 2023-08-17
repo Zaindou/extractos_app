@@ -1,3 +1,4 @@
+from app.utils.helpers import mask_string, format_currency
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_caching import Cache
@@ -18,6 +19,11 @@ logging.basicConfig(
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    #Mask filter
+    app.jinja_env.filters["mask"] = mask_string
+    app.jinja_env.filters["currency_cop"] = format_currency
+
 
     # Inicializar la extensión de la base de datos y otras extensiones
     db.init_app(app)

@@ -45,7 +45,7 @@
         </div>
 
         <div class="card-body">
-            <form id="upload-form" action="extractos/upload-extracto-mora" method="post" enctype="multipart/form-data">
+            <form id="upload-form" action="extractos/upload-extracto" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <input type="file" class="form-control" id="file" name="file" accept=".xlsx, .xls" required>
                     <p style="text-align:right; font-size: 11px; color: #888888;">Solo se permiten archivos <b>.xlsx</b>
@@ -90,7 +90,7 @@
         });
 
         $.ajax({
-            url: "upload-extracto-mora",
+            url: "upload-extracto",
             type: "POST",
             data: formData,
             contentType: false,

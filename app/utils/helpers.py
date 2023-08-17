@@ -4,6 +4,7 @@ from io import BytesIO
 import PyPDF2
 import locale
 
+
 ALLOWED_EXTENSIONS = Config.ALLOWED_EXTENSIONS
 
 def encrypt_pdf(pdf_content, password):
@@ -84,3 +85,16 @@ def get_primary_email(cliente):
         return cliente.mail_3
     else:
         return None
+
+def mask_string(s):
+    if not s:
+        return ''
+    return '*' * (len(s) - 5) + s[-5:]
+
+
+def format_currency(value):
+    if value is None:
+        return "$0"
+    locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8') 
+    formatted_value = locale.currency(value, grouping=True, symbol=False)  
+    return formatted_value.split(',')[0]

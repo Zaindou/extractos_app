@@ -21,6 +21,7 @@ import os
 
 extractos = Blueprint('extractos', __name__)
 
+
 # @extractos.route("/test-template")
 # def test_email_template():
 #     return render_template("extracto_estado_cuenta.html", cliente=Cliente.query.first(), registros=Producto.query.all(), periodo="2021-01-01", generation_date=datetime.now().strftime("%d/%m/%Y"))
@@ -95,7 +96,7 @@ def upload_template():
     return render_template("upload_file.html")
 
 
-@extractos.route("/upload-extracto-mora", methods=["POST"])
+@extractos.route("/upload-extracto", methods=["POST"])
 def upload_excel():
     logging.info("Starting file upload process...")
     
@@ -112,8 +113,14 @@ def upload_excel():
         return jsonify({"error": "File type not allowed"}), 400
     
     try:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+        # Extraer la extensión del archivo original
+        file_extension = os.path.splitext(file.filename)[1]
+        
+        # Renombrar el archivo con el timestamp actual
+        timestamp = datetime.now().strftime("%d-%m-%Y-%H%M%S")
+        new_filename = f"extracto-{timestamp}{file_extension}" 
+
+        filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], new_filename)
         file.save(filepath)
         process_excel(filepath)
         return jsonify({"message": "Datos importados y correos enviados exitosamente!"}), 200
@@ -132,6 +139,14 @@ def process_excel(filepath):
         logging.info(f"Processing row {idx}: {row}")
         validate_row(row, idx)
         process_data(row, upload_id)
+
+    try:
+        db.session.commit()
+        send_extractos(upload_id)
+    except Exception as e:
+        handle_db_exception(e)
+        jsonify({"error": f"Error processing file: {handle_db_exception(e)}"}), 500
+        raise
         
     workbook.close()
 
@@ -179,12 +194,7 @@ def process_data(row, upload_id):
         'tipo_extracto': row[16],
     })
 
-    try:
-        db.session.commit()
-        send_extractos(upload_id)
-    except Exception as e:
-        handle_db_exception(e)
-        jsonify({"error": f"Error processing file: {handle_db_exception(e)}"}), 500
+
 
 def create_or_update_cliente(row):
     cliente = Cliente.query.filter_by(id_contacto=row[0]).first()
@@ -272,8 +282,8 @@ def send_extracto_email(cliente, tipo_extracto):
     SENDER_EMAIL = Config.SENDER_EMAIL
     RECIPIENT_EMAIL = get_primary_email(cliente)
     EMAIL_SUBJECT = f" Extracto de tus productos QNT - {periodo.split('-')[0]}"
-    BULK_ID = f"extracto-mora-test-{periodo.split('-')[0]}"
-    MESSAGE_ID = f"extracto-mora-{periodo.split('-')[0]}-{cliente.id_contacto}"
+    BULK_ID = f"{tipo_extracto}-{periodo.split('-')[0]}"
+    MESSAGE_ID = f"{tipo_extracto}-{periodo.split('-')[0]}-{cliente.id_contacto}"
 
     # Render the HTML template with the actual values
     email_html = render_template(

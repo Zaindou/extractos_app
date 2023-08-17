@@ -51,12 +51,12 @@
             <tbody>
                 {% for registro in registros %}
                 <tr>
-                    <td style="padding: 10px; border: 1px solid #00263C;">{{ registro.numero_producto }}</td>
-                    <td style="padding: 10px; border: 1px solid #00263C;">${{ registro.meses_castigo }}</td>
+                    <td style="padding: 10px; border: 1px solid #00263C;">{{ registro.numero_producto|mask }}</td>
+                    <td style="padding: 10px; border: 1px solid #00263C;">{{ registro.meses_castigo }}</td>
                     <td style="padding: 10px; border: 1px solid #00263C;">{{ registro.fecha_corte.strftime('%d/%m/%Y')
                         }}
                     </td>
-                    <td style="padding: 10px; border: 1px solid #00263C;">${{ registro.saldo_total }}</td>
+                    <td style="padding: 10px; border: 1px solid #00263C;">${{ registro.saldo_total|currency_cop }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
