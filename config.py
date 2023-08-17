@@ -6,9 +6,17 @@ import os
 
 
 class Config:
-    # Configuración ce
+    # Configuración de la aplicación
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'my-secret-key'
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    APP_BASE_URL = os.environ.get("APP_BASE_URL")
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "app/uploaded_files")
+    ALLOWED_EXTENSIONS = {"xls", "xlsx"} #Extensiones permitidas para subir archivos.
+    CACHE_REDIS_URL = os.environ.get("CACHE_REDIS_URL")
+    CACHE_TIMEOUT = os.environ.get(
+        "CACHE_TIMEOUT", 300
+    )
+    CACHE_TYPE = "RedisCache"
 
     # Carga las variables de entorno
     dotenv_path = os.path.join(BASE_DIR, ".env")
@@ -25,21 +33,10 @@ class Config:
     # Configuración del correo
     MAIL_BASE_URL = os.environ.get("MAIL_BASE_URL")
     MAIL_API_KEY = os.environ.get("MAIL_API_KEY")
-    SENDER_EMAIL = "QNT <no-responder@qnt.com.co>"
+    SENDER_EMAIL = "QNT<no-responder@qnt.com.co>"
     EMAIL_REPLYTO = "diagnosticofinanciero@qnt.com.co"
 
 
-    # Configuración de la aplicación
-    APP_BASE_URL = os.environ.get("APP_BASE_URL")
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "app/uploaded_files")
-    ALLOWED_EXTENSIONS = {"xls", "xlsx"}
-    CACHE_REDIS_URL = os.environ.get("CACHE_REDIS_URL")
-    CACHE_TIMEOUT = os.environ.get(
-        "CACHE_TIMEOUT", 300
-    )
-    CACHE_TYPE = "RedisCache"
-
-    # Configuración de Celery (si decide usarlo)
     # CELERY_BROKER_URL = 'redis://localhost:6379/0'
     # CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
     # CELERY_TASK_SERIALIZER = 'json'
