@@ -238,7 +238,6 @@ def send_extractos(codigo_de_cargue):
     try:
         extractos = Extracto.query.filter_by(codigo_de_cargue=codigo_de_cargue).all()
 
-
         for extracto in extractos:
             cliente = Cliente.query.filter_by(id=extracto.id_cliente).first()
             tipo_extracto = extracto.tipo_extracto
@@ -265,8 +264,6 @@ def send_extracto_email(cliente, tipo_extracto):
     all_headers = {
         "Authorization": Config.MAIL_API_KEY,
     }
-
-    tipo_extracto = Extracto.query.filter_by(id_cliente=cliente.id).first().tipo_extracto
 
     periodo = date_to_period(cliente.periodo)
     extracto_url = f"{Config.APP_BASE_URL}/extractos/{tipo_extracto}/{periodo}/{cliente.id_contacto}.pdf"
