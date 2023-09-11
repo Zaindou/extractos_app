@@ -1,8 +1,8 @@
-"""Migrate data
+"""First data
 
-Revision ID: 3fbc3ed06fbe
-Revises: 81acdd231ea6
-Create Date: 2023-08-17 08:28:31.248856
+Revision ID: cc6287a084c8
+Revises: 
+Create Date: 2023-09-11 10:26:18.649305
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '3fbc3ed06fbe'
-down_revision = '81acdd231ea6'
+revision = 'cc6287a084c8'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -49,7 +49,7 @@ def upgrade():
     sa.Column('id_cliente', sa.String(length=20), nullable=False),
     sa.Column('periodo', sa.Date(), nullable=True),
     sa.Column('numero_producto', sa.String(length=20), nullable=True),
-    sa.Column('dia_pago', sa.Date(), nullable=True),
+    sa.Column('dia_pago', sa.Integer(), nullable=True),
     sa.Column('valor_cuota_mensual', sa.Float(), nullable=True),
     sa.Column('valor_mora', sa.Float(), nullable=True),
     sa.Column('dias_mora', sa.Integer(), nullable=True),

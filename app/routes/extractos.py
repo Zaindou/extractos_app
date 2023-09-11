@@ -1,13 +1,21 @@
 from flask import render_template, jsonify, request, Response, Blueprint, current_app
 from app.models import Cliente, Producto, Extracto
-from app.utils.validators import (is_valid_string,
+from app.utils.validators import (
+    is_valid_string,
     is_valid_name,
     is_valid_email,
     is_valid_integer,
     is_valid_float,
-    validate_row)
+    validate_row,
+)
 from flask_weasyprint import HTML, render_pdf
-from app.utils.helpers import (period_to_date, allowed_file, get_primary_email, date_to_period, encrypt_pdf)
+from app.utils.helpers import (
+    period_to_date,
+    allowed_file,
+    get_primary_email,
+    date_to_period,
+    encrypt_pdf,
+)
 from werkzeug.utils import secure_filename
 from openpyxl import load_workbook
 from datetime import datetime
@@ -19,7 +27,7 @@ import json
 import uuid
 import os
 
-extractos = Blueprint('extractos', __name__)
+extractos = Blueprint("extractos", __name__)
 
 
 # @extractos.route("/test-template")
@@ -86,10 +94,12 @@ def extracto_pdf(periodo, id_contacto, tipo_extracto):
             500,
         )
 
+
 def get_template_for_extracto(tipo_extracto):
     if tipo_extracto == "estado-cuenta":
         return "extracto_estado_cuenta.html"
     return "extracto_mora.html"
+
 
 @extractos.route("/subir-extracto", methods=["GET"])
 def upload_template():
@@ -99,7 +109,7 @@ def upload_template():
 @extractos.route("/upload-extracto", methods=["POST"])
 def upload_excel():
     logging.info("Starting file upload process...")
-    
+
     # Validaciones del archivo
     file = request.files.get("file")
     if not file:
@@ -111,30 +121,34 @@ def upload_excel():
     if not allowed_file(file.filename):
         logging.error("File type not allowed")
         return jsonify({"error": "File type not allowed"}), 400
-    
+
     try:
         # Extraer la extensión del archivo original
         file_extension = os.path.splitext(file.filename)[1]
-        
+
         # Renombrar el archivo con el timestamp actual
         timestamp = datetime.now().strftime("%d-%m-%Y-%H%M%S")
-        new_filename = f"extracto-{timestamp}{file_extension}" 
+        new_filename = f"extracto-{timestamp}{file_extension}"
 
         filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], new_filename)
         file.save(filepath)
         process_excel(filepath)
-        return jsonify({"message": "Datos importados y correos enviados exitosamente!"}), 200
+        return (
+            jsonify({"message": "Datos importados y correos enviados exitosamente!"}),
+            200,
+        )
 
     except Exception as e:
         logging.error(f"Error while processing file: {e}")
         return jsonify({"error": f"Error processing file: {str(e)}"}), 500
+
 
 def process_excel(filepath):
     workbook = load_workbook(filepath)
     sheet = workbook.active
 
     upload_id = f"{str(uuid.uuid4())[:8]}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    
+
     for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2):
         logging.info(f"Processing row {idx}: {row}")
         validate_row(row, idx)
@@ -147,7 +161,7 @@ def process_excel(filepath):
         handle_db_exception(e)
         jsonify({"error": f"Error processing file: {handle_db_exception(e)}"}), 500
         raise
-        
+
     workbook.close()
 
 
@@ -157,27 +171,26 @@ def process_data(row, upload_id):
     tipo_extracto = row[16]
 
     common_data = {
-        'id_cliente': row[1],
-        'periodo': row[9],
-        'numero_producto': row[10],
+        "id_cliente": row[1],
+        "periodo": row[9],
+        "numero_producto": row[10],
     }
 
     if tipo_extracto == "extracto-mora":
         additional_data = {
-        'dia_pago':row[11],
-        'valor_cuota_mensual':row[12],
-        'valor_mora':row[13],
-        'dias_mora':row[14],
-        'siguiente_pago':row[15],
+            "dia_pago": row[11],
+            "valor_cuota_mensual": row[12],
+            "valor_mora": row[13],
+            "dias_mora": row[14],
+            "siguiente_pago": row[15],
         }
-
 
     elif tipo_extracto == "estado-cuenta":
         additional_data = {
-            'numero_obligaciones':row[11],
-            'saldo_total': row[12],
-            'meses_castigo': row[13],
-            'fecha_corte':row[14],
+            "numero_obligaciones": row[11],
+            "saldo_total": row[12],
+            "meses_castigo": row[13],
+            "fecha_corte": row[14],
         }
 
     else:
@@ -186,61 +199,64 @@ def process_data(row, upload_id):
     product_data = {**common_data, **additional_data}
     add_to_db(Producto, product_data)
 
-    add_to_db(Extracto,{
-        'id_cliente':row[1],
-        'id_contacto':row[0],
-        'periodo':row[9],
-        'codigo_de_cargue':upload_id,
-        'tipo_extracto': row[16],
-    })
-
+    add_to_db(
+        Extracto,
+        {
+            "id_cliente": row[1],
+            "id_contacto": row[0],
+            "periodo": row[9],
+            "codigo_de_cargue": upload_id,
+            "tipo_extracto": row[16],
+        },
+    )
 
 
 def create_or_update_cliente(row):
     cliente = Cliente.query.filter_by(id_contacto=row[0]).first()
     data = {
-        'id': row[1],
-        'id_contacto': row[0],
-        'nombre_titular': row[2],
-        'telefono_1': row[3],
-        'telefono_2': row[4],
-        'telefono_3': row[5],
-        'mail_1': row[6],
-        'mail_2': row[7],
-        'mail_3': row[8],
-        'periodo': row[9],
+        "id": row[1],
+        "id_contacto": row[0],
+        "nombre_titular": row[2],
+        "telefono_1": row[3],
+        "telefono_2": row[4],
+        "telefono_3": row[5],
+        "mail_1": row[6],
+        "mail_2": row[7],
+        "mail_3": row[8],
+        "periodo": row[9],
     }
     if not cliente:
         add_to_db(Cliente, data)
     else:
         update_existing_cliente(cliente, data)
 
+
 def update_existing_cliente(cliente, data):
     for key, value in data.items():
         setattr(cliente, key, value)
     db.session.commit()
 
+
 def add_to_db(model, data):
     instance = model(**data)
     db.session.add(instance)
 
+
 def handle_db_exception(e):
     logging.exception(e)
     db.session.rollback()
-    
+
     error_messages = {
-        'cliente': f"Un error ha ocurrido al cargar el cliente {e}",
-        'producto': f"Un error ha ocurrido al cargar el producto {e}",
-        'extracto': f"Un error ha ocurrido al cargar el extracto {e}",
+        "cliente": f"Un error ha ocurrido al cargar el cliente {e}",
+        "producto": f"Un error ha ocurrido al cargar el producto {e}",
+        "extracto": f"Un error ha ocurrido al cargar el extracto {e}",
     }
 
     for key, message in error_messages.items():
         if key in str(e).lower():
             raise Exception(message)
-    
+
     raise Exception(f"Un error ha ocurrido al enviar los correos {e}")
-
-
 
 
 @extractos.route("/send-extractos/<codigo_de_cargue>", methods=["POST"])
@@ -303,7 +319,10 @@ def send_extracto_email(cliente, tipo_extracto):
     }
 
     response = requests.post(
-        Config.MAIL_BASE_URL + "/email/3/send", data=form_data, files=files, headers=all_headers
+        Config.MAIL_BASE_URL + "/email/3/send",
+        data=form_data,
+        files=files,
+        headers=all_headers,
     )
 
     if response.status_code != 200:
