@@ -26,6 +26,7 @@ import requests
 import json
 import uuid
 import os
+import csv
 
 extractos = Blueprint("extractos", __name__)
 
@@ -144,25 +145,50 @@ def upload_excel():
 
 
 def process_excel(filepath):
-    workbook = load_workbook(filepath)
-    sheet = workbook.active
-
+    errors = []
     upload_id = f"{str(uuid.uuid4())[:8]}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2):
-        logging.info(f"Processing row {idx}: {row}")
-        validate_row(row, idx)
-        process_data(row, upload_id)
-
     try:
-        db.session.commit()
-        send_extractos(upload_id)
-    except Exception as e:
-        handle_db_exception(e)
-        jsonify({"error": f"Error processing file: {handle_db_exception(e)}"}), 500
-        raise
+        workbook = load_workbook(filepath)
+        sheet = workbook.active
 
-    workbook.close()
+        for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), 2):
+            try:
+                logging.info(f"Processing row {idx}: {row}")
+                validate_row(row, idx)
+                process_data(row, upload_id)
+            except Exception as e:
+                error_message = f"Error in row {idx}: {str(e)}"
+                errors.append(error_message)
+                logging.error(error_message)
+
+        try:
+            db.session.commit()
+            send_extractos(upload_id)
+        except Exception as e:
+            error_message = f"Error processing file: {str(e)}"
+            errors.append(error_message)
+            logging.error(error_message)
+
+    except Exception as e:
+        error_message = f"Error opening/reading the Excel file: {str(e)}"
+        errors.append(error_message)
+        logging.error(error_message)
+    finally:
+        workbook.close()
+
+    error_filepath = f"error_log_{upload_id}.csv"
+
+    # Write the errors to a file if there are any.
+    if errors:
+        with open(error_filepath, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Errors"])
+            for error in errors:
+                writer.writerow([error])
+
+        return error_filepath
+    return "Processing completed!"
 
 
 def process_data(row, upload_id):
@@ -286,7 +312,7 @@ def send_extractos(codigo_de_cargue):
         return jsonify({"error": str(e)}), 500
 
 
-def send_extracto_email(cliente, tipo_extracto):
+def send_extracto_email(cliente, tipo_extracto, max_retries=3):
     all_headers = {
         "Authorization": Config.MAIL_API_KEY,
     }
@@ -318,16 +344,30 @@ def send_extracto_email(cliente, tipo_extracto):
         "html": email_html,
     }
 
-    response = requests.post(
-        Config.MAIL_BASE_URL + "/email/3/send",
-        data=form_data,
-        files=files,
-        headers=all_headers,
-    )
-
-    if response.status_code != 200:
-        raise Exception(
-            f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {response.status_code}"
+    for attempt in range(max_retries):
+        response = requests.post(
+            Config.MAIL_BASE_URL + "/email/3/send",
+            data=form_data,
+            files=files,
+            headers=all_headers,
         )
 
-    return response.status_code
+        # Si el código de respuesta es 200, se envió correctamente.
+        if response.status_code == 200:
+            return response.status_code
+
+        # Si recibimos un 400, esperamos y reintentamos.
+        elif response.status_code == 400:
+            time.sleep(5)  # Espera 5 segundos antes de reintentar.
+            continue
+
+        # Si es otro código de error, levantamos una excepción.
+        else:
+            raise Exception(
+                f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {response.status_code}"
+            )
+
+    # Si hemos agotado todos los reintento y aún así ha fallado, levantamos una excepción.
+    raise Exception(
+        f"Error después de {max_retries} intentos. No se pudo enviar el correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Último Status: {response.status_code}"
+    )
