@@ -27,6 +27,7 @@ import json
 import uuid
 import os
 import csv
+import time
 
 extractos = Blueprint("extractos", __name__)
 
@@ -295,21 +296,20 @@ def send_extractos(codigo_de_cargue):
             tipo_extracto = extracto.tipo_extracto
 
             if cliente is None:
-                raise Exception(
-                    f"No se encontró el cliente con id {extracto.id_cliente}"
-                )
+                logging.error(f"No se encontró el cliente con id {extracto.id_cliente}")
+                continue
 
             status = send_extracto_email(cliente, tipo_extracto)
 
-            if status != 200:
-                raise Exception(
-                    f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {status}"
-                )
+            # if status != 200:
+            #     raise Exception(
+            #         f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {status}"
+            #     )
 
         return jsonify({"message": "Emails enviados exitosamente!"})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error al enviar correo: {str(e)}")
 
 
 def send_extracto_email(cliente, tipo_extracto, max_retries=3):
@@ -354,6 +354,9 @@ def send_extracto_email(cliente, tipo_extracto, max_retries=3):
 
         # Si el código de respuesta es 200, se envió correctamente.
         if response.status_code == 200:
+            logging.info(
+                f"Correo enviado a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {response.status_code}"
+            )
             return response.status_code
 
         # Si recibimos un 400, esperamos y reintentamos.
