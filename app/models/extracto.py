@@ -1,5 +1,6 @@
 from app import db
 
+
 # Statement Model
 class Extracto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -11,3 +12,4 @@ class Extracto(db.Model):
     visitado = db.Column(db.Boolean)
     veces_visitado = db.Column(db.Integer, default=0, nullable=False)
     ultima_visita = db.Column(db.Date)
+    enviado = db.Column(db.Boolean)

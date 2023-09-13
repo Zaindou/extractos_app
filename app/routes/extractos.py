@@ -289,7 +289,9 @@ def handle_db_exception(e):
 @extractos.route("/send-extractos/<codigo_de_cargue>", methods=["POST"])
 def send_extractos(codigo_de_cargue):
     try:
-        extractos = Extracto.query.filter_by(codigo_de_cargue=codigo_de_cargue).all()
+        extractos = Extracto.query.filter_by(
+            codigo_de_cargue=codigo_de_cargue, enviado=False
+        ).all()
 
         for extracto in extractos:
             cliente = Cliente.query.filter_by(id=extracto.id_cliente).first()
@@ -301,10 +303,15 @@ def send_extractos(codigo_de_cargue):
 
             status = send_extracto_email(cliente, tipo_extracto)
 
-            # if status != 200:
-            #     raise Exception(
-            #         f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {status}"
-            #     )
+            if status == 200:
+                extracto.enviado = True
+                db.session.commit()
+
+            if status != 200:
+                logging.error(
+                    f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {status}"
+                )
+                continue
 
         return jsonify({"message": "Emails enviados exitosamente!"})
 
