@@ -317,6 +317,12 @@ def send_extractos(codigo_de_cargue):
 
     except Exception as e:
         logging.error(f"Error al enviar correo: {str(e)}")
+        return (
+            jsonify(
+                {"error": f"Error al enviar extracto para el cliente {id}: {str(e)}"}
+            ),
+            500,
+        )
 
 
 def send_extracto_email(cliente, tipo_extracto, max_retries=3):

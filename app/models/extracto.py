@@ -12,4 +12,4 @@ class Extracto(db.Model):
     visitado = db.Column(db.Boolean)
     veces_visitado = db.Column(db.Integer, default=0, nullable=False)
     ultima_visita = db.Column(db.Date)
-    enviado = db.Column(db.Boolean)
+    enviado = db.Column(db.Boolean, default=False, nullable=False)
