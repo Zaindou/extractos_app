@@ -1,11 +1,14 @@
 from datetime import datetime
 from config import Config
 from io import BytesIO
+import requests
 import PyPDF2
 import locale
+import json
 
 
 ALLOWED_EXTENSIONS = Config.ALLOWED_EXTENSIONS
+
 
 def encrypt_pdf(pdf_content, password):
     pdf_writer = PyPDF2.PdfFileWriter()
@@ -20,6 +23,7 @@ def encrypt_pdf(pdf_content, password):
     pdf_writer.write(encrypted_pdf)
 
     return encrypted_pdf.getvalue()
+
 
 # Periods are received as strings, this function converts them to date format.
 def period_to_date(periodo_str):
@@ -86,15 +90,38 @@ def get_primary_email(cliente):
     else:
         return None
 
+
 def mask_string(s):
     if not s:
-        return ''
-    return '*' * (len(s) - 5) + s[-5:]
+        return ""
+    return "*" * (len(s) - 5) + s[-5:]
 
 
 def format_currency(value):
     if value is None:
         return "$0"
-    locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8') 
-    formatted_value = locale.currency(value, grouping=True, symbol=False)  
-    return formatted_value.split(',')[0]
+    locale.setlocale(locale.LC_ALL, "es_CO.UTF-8")
+    formatted_value = locale.currency(value, grouping=True, symbol=False)
+    return formatted_value.split(",")[0]
+
+
+def check_domain_blocked(domain):
+    """Verifica si un dominio/subdominio está bloqueado en Infobip"""
+    url = f"https://2knxjz.api.infobip.com/email/1/domains/{domain}"
+    headers = {"Authorization": Config.MAIL_API_KEY}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("blocked", True)  # Asumir bloqueado si no hay información.
+    else:
+        # Manejar errores de la API (por ejemplo, levantar una excepción o retornar True).
+        return True
+
+
+def get_next_available_domain():
+    """Obtiene el próximo dominio/subdominio disponible"""
+    for domain in Config.DOMAINS:
+        if not check_domain_blocked(domain):
+            return domain
+    raise Exception("Todos los dominios están bloqueados!")

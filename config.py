@@ -1,4 +1,3 @@
-
 from urllib.parse import quote_plus
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -7,7 +6,7 @@ import os
 
 class Config:
     # Configuración de Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'my-secret-key'
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "my-secret-key"
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
     # Carga las variables de entorno
@@ -20,23 +19,32 @@ class Config:
     DB_HOST = os.environ.get("DB_HOST")
     DB_NAME = os.environ.get("DB_NAME")
 
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+    )
 
     # Configuración del correo
     MAIL_BASE_URL = os.environ.get("MAIL_BASE_URL")
     MAIL_API_KEY = os.environ.get("MAIL_API_KEY")
-    SENDER_EMAIL = "QNT<no-responder@qnt.com.co>"
+    MAIL_DOMAIN = "qnt.com.co"
+    DOMAINS = [
+        "extractoscuenta3.qnt.com.co",
+        "extractoscuenta2.qnt.com.co",
+        "extractoscuenta.qnt.com.co",
+        "extractosmora2.qnt.com.co",
+        "extractosmora.qnt.com.co",
+        "disgnostico.qnt.com.c>",
+        "especiales.qnt.com.co",
+        "no-responder.qnt.com.co",
+    ]
     EMAIL_REPLYTO = "diagnosticofinanciero@qnt.com.co"
-
 
     # Configuración de la aplicación
     APP_BASE_URL = os.environ.get("APP_BASE_URL")
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app/uploaded_files")
     ALLOWED_EXTENSIONS = {"xls", "xlsx"}
     CACHE_REDIS_URL = os.environ.get("CACHE_REDIS_URL")
-    CACHE_TIMEOUT = os.environ.get(
-        "CACHE_TIMEOUT", 300
-    )
+    CACHE_TIMEOUT = os.environ.get("CACHE_TIMEOUT", 300)
     CACHE_TYPE = "RedisCache"
 
     # Configuración de Celery (si decide usarlo)
@@ -56,8 +64,3 @@ class Config:
     # timezone = "America/Bogota"
     # enable_utc = True
     # imports = ("app.routes.extractos",)
-
-
-
-
-

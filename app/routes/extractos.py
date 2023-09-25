@@ -15,6 +15,8 @@ from app.utils.helpers import (
     get_primary_email,
     date_to_period,
     encrypt_pdf,
+    check_domain_blocked,
+    get_next_available_domain,
 )
 from werkzeug.utils import secure_filename
 from openpyxl import load_workbook
@@ -30,6 +32,9 @@ import csv
 import time
 
 extractos = Blueprint("extractos", __name__)
+
+MAIL_COUNT = 0
+CHECK_THRESHOLD = 500
 
 
 # @extractos.route("/test-template")
@@ -301,31 +306,34 @@ def send_extractos(codigo_de_cargue):
                 logging.error(f"No se encontró el cliente con id {extracto.id_cliente}")
                 continue
 
-            status = send_extracto_email(cliente, tipo_extracto)
+            try:
+                status = send_extracto_email(cliente, tipo_extracto)
+                if status == 200:
+                    extracto.enviado = True
+                    db.session.commit()
 
-            if status == 200:
-                extracto.enviado = True
-                db.session.commit()
-
-            if status != 200:
-                logging.error(
-                    f"Error al enviar correo a {cliente.nombre_titular} Correo:{get_primary_email(cliente)} - Status: {status}"
-                )
+            except Exception as e:  # Captura la excepción y registra el error
+                logging.error(f"Error al enviar correo: {str(e)}")
                 continue
 
         return jsonify({"message": "Emails enviados exitosamente!"})
 
     except Exception as e:
-        logging.error(f"Error al enviar correo: {str(e)}")
-        return (
-            jsonify(
-                {"error": f"Error al enviar extracto para el cliente {id}: {str(e)}"}
-            ),
-            500,
-        )
+        logging.error(f"Error general al enviar correos: {str(e)}")
+        return jsonify({"error": f"Error general al enviar correos: {str(e)}"}), 500
 
 
 def send_extracto_email(cliente, tipo_extracto, max_retries=3):
+    global MAIL_COUNT
+    next_domain = Config.MAIL_DOMAIN
+
+    MAIL_COUNT += 1
+    if MAIL_COUNT % CHECK_THRESHOLD == 0:
+        next_domain = get_next_available_domain()
+        Config.MAIL_DOMAIN = next_domain
+        MAIL_COUNT = 0
+        logging.info(f"Usando el dominio {next_domain} para los siguientes envíos.")
+
     all_headers = {
         "Authorization": Config.MAIL_API_KEY,
     }
@@ -334,7 +342,7 @@ def send_extracto_email(cliente, tipo_extracto, max_retries=3):
     extracto_url = f"{Config.APP_BASE_URL}/extractos/{tipo_extracto}/{periodo}/{cliente.id_contacto}.pdf"
     files = ["xd"]
 
-    SENDER_EMAIL = Config.SENDER_EMAIL
+    SENDER_EMAIL = next_domain
     RECIPIENT_EMAIL = get_primary_email(cliente)
     EMAIL_SUBJECT = f" Extracto de tus productos QNT - {periodo.split('-')[0]}"
     BULK_ID = f"{tipo_extracto}-{periodo.split('-')[0]}"
@@ -348,7 +356,7 @@ def send_extracto_email(cliente, tipo_extracto, max_retries=3):
     )
 
     form_data = {
-        "from": SENDER_EMAIL,
+        "from": f"QNT<no-responder@{SENDER_EMAIL}>",
         "replyTo": Config.EMAIL_REPLYTO,
         "to": RECIPIENT_EMAIL,
         "subject": EMAIL_SUBJECT,
@@ -364,6 +372,8 @@ def send_extracto_email(cliente, tipo_extracto, max_retries=3):
             files=files,
             headers=all_headers,
         )
+
+        print(response.json(), "RESPUESTA JSON")
 
         # Si el código de respuesta es 200, se envió correctamente.
         if response.status_code == 200:
