@@ -28,16 +28,18 @@ class Config:
     MAIL_API_KEY = os.environ.get("MAIL_API_KEY")
     MAIL_DOMAIN = "qnt.com.co"
     DOMAINS = [
+        "qnt.com.co",
         "extractoscuenta3.qnt.com.co",
         "extractoscuenta2.qnt.com.co",
         "extractoscuenta.qnt.com.co",
         "extractosmora2.qnt.com.co",
         "extractosmora.qnt.com.co",
-        "disgnostico.qnt.com.c>",
+        "disgnostico.qnt.com.co",
         "especiales.qnt.com.co",
         "no-responder.qnt.com.co",
     ]
     EMAIL_REPLYTO = "diagnosticofinanciero@qnt.com.co"
+    CHECK_THRESHOLD = 20
 
     # Configuración de la aplicación
     APP_BASE_URL = os.environ.get("APP_BASE_URL")

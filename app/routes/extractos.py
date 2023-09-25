@@ -34,7 +34,7 @@ import time
 extractos = Blueprint("extractos", __name__)
 
 MAIL_COUNT = 0
-CHECK_THRESHOLD = 500
+CHECK_THRESHOLD = config.CHECK_THRESHOLD
 
 
 # @extractos.route("/test-template")
