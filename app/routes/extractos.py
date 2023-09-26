@@ -42,6 +42,15 @@ CHECK_THRESHOLD = Config.CHECK_THRESHOLD
 #     return render_template("extracto_estado_cuenta.html", cliente=Cliente.query.first(), registros=Producto.query.all(), periodo="2021-01-01", generation_date=datetime.now().strftime("%d/%m/%Y"))
 
 
+# @extractos.route("/test-email")
+# def test_email():
+#     return render_template(
+#         "email_template.html",
+#         nombre_titular="Juan",
+#         extracto_url="https://www.google.com",
+#     )
+
+
 @extractos.route("/<tipo_extracto>/<periodo>/<id_contacto>.pdf")
 @cache.cached(
     timeout=int(Config.CACHE_TIMEOUT),
